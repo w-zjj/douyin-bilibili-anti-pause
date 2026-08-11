@@ -32,6 +32,9 @@
 ## 使用
 
 无需任何操作，打开抖音或 B 站网页后脚本自动运行。
+记得打开篡改后扩展设置允许用户使用脚本
+<img width="525" height="540" alt="image" src="https://github.com/user-attachments/assets/abcc487c-bfe2-4486-aeaf-6b6e5168b576" />
+
 
 ## 工作原理
 
