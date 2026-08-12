@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         抖音/B站网页版防暂停
 // @namespace    https://github.com/w-zjj/douyin-bilibili-anti-pause
-// @version      1.3.4
+// @version      1.3.5
 // @description  防止抖音、哔哩哔哩网页版因长时间无操作自动暂停视频，使用 Web Worker 抵抗后台标签页节流，后台也能稳定恢复播放。
 // @author       w-zjj
 // @match        https://www.douyin.com/*
@@ -15,6 +15,10 @@
 
 (function() {
     'use strict';
+
+    // SPA 路由切换时 Tampermonkey 可能重新注入脚本，防止重复创建 Worker
+    if (window.__douyinAntiPauseInstalled) return;
+    window.__douyinAntiPauseInstalled = true;
 
     // 通过 Web Worker 实现：后台标签页不被节流，保持精确 10 秒检测
     const workerCode = `
@@ -33,7 +37,9 @@
     `;
 
     const blob = new Blob([workerCode], { type: 'application/javascript' });
-    const worker = new Worker(URL.createObjectURL(blob));
+    const workerUrl = URL.createObjectURL(blob);
+    const worker = new Worker(workerUrl);
+    URL.revokeObjectURL(workerUrl);  // Worker 已加载脚本，释放 Blob URL
 
     // 用户主动暂停标记：WeakSet 记录用户在前台主动暂停的 video 元素
     // - 文档级捕获阶段委托，所有 video 的 pause/play 事件均被捕获，无需逐个绑定
