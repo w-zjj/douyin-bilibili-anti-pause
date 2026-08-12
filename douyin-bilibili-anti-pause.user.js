@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         抖音/B站网页版防暂停
 // @namespace    https://github.com/w-zjj/douyin-bilibili-anti-pause
-// @version      1.3.1
+// @version      1.3.2
 // @description  防止抖音、哔哩哔哩网页版因长时间无操作自动暂停视频，使用 Web Worker 抵抗后台标签页节流，后台也能稳定恢复播放。
 // @author       w-zjj
 // @match        https://www.douyin.com/*
@@ -36,18 +36,15 @@
     const worker = new Worker(URL.createObjectURL(blob));
 
     worker.onmessage = function() {
-        // 仅处理当前可见的视频，跳过抖音预加载的隐藏视频，避免误触发上下切换
-        const videos = document.querySelectorAll('video');
-        for (const v of videos) {
-            const rect = v.getBoundingClientRect();
-            // 可见判定：有实际尺寸且在视口内
-            const isVisible = rect.width > 100 && rect.height > 100
-                && rect.bottom > 0 && rect.top < window.innerHeight;
-            if (isVisible && v.paused && !v.ended) {
+        // 通过 currentTime 区分活跃视频与预加载视频：
+        // - 预加载视频 currentTime 为 0，跳过，避免误触发抖音上下切换
+        // - 活跃视频 currentTime > 0，被暂停则恢复
+        // 此判断不依赖 getBoundingClientRect，后台标签页也能正常工作
+        document.querySelectorAll('video').forEach(v => {
+            if (v.paused && !v.ended && v.currentTime > 0) {
                 v.play().catch(() => {});
-                break;  // 只恢复第一个可见视频，避免多视频同时播放
             }
-        }
+        });
     };
 
     worker.postMessage('start');
